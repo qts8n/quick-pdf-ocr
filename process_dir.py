@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor
 import logging
 import multiprocessing
 import os.path as osp
+from time import perf_counter
 
 import easyocr
 import fitz
@@ -35,12 +36,15 @@ def _main(config_dto):
     for doc_idx, pdf_path in enumerate(pdf_paths, start=1):
         pdf_name, _ = osp.splitext(osp.basename(pdf_path))
         output_path = osp.join(config_dto.out_dir_path, f'{pdf_name}.txt')
-        logger.info('INFO: Processing document "%s" [%i/%i]', pdf_name, doc_idx, doc_num)
         if osp.isfile(output_path):
             logger.info('WARN: Document "%s" was already processed before', pdf_name)
             continue
         document = fitz.open(pdf_path)
+        logger.info('INFO: Processing document "%s" (%i pages) [%i/%i]', pdf_name, len(document), doc_idx, doc_num)
+        t_start = perf_counter()
         content = document_to_content(document, reader)
+        t_end = perf_counter()
+        logger.info('INFO: Document "%s" has been processed successfully! (time: %fs)', pdf_name, t_end - t_start)
         with open(output_path, 'w+') as o_file:
             o_file.writelines(content)
 
