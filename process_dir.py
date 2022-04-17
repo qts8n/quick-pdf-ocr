@@ -1,17 +1,23 @@
 import argparse
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+import logging
 import multiprocessing
 import os.path as osp
 
 import easyocr
 import fitz
-from tqdm import tqdm
 
 import docs
 import utils
 
 _OUT_DIR_PATH = 'outputs'
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+logger.addHandler(ch)
 
 
 def document_to_content(document, reader):
@@ -24,10 +30,14 @@ def document_to_content(document, reader):
 def _main(config_dto):
     reader = easyocr.Reader(['ru'], gpu=True)
     pdf_paths = utils.get_pdf_paths(config_dto.dir_path)
-    for pdf_path in tqdm(pdf_paths, desc='Processing documents'):
+    logger.info('INFO: Model has been initialized. Processing documents...')
+    doc_num = len(pdf_paths)
+    for doc_idx, pdf_path in enumerate(pdf_paths, start=1):
         pdf_name, _ = osp.splitext(osp.basename(pdf_path))
         output_path = osp.join(config_dto.out_dir_path, f'{pdf_name}.txt')
+        logger.info('INFO: Processing document "%s" [%i/%i]', pdf_name, doc_idx, doc_num)
         if osp.isfile(output_path):
+            logger.info('WARN: Document "%s" was already processed before', pdf_name)
             continue
         document = fitz.open(pdf_path)
         content = document_to_content(document, reader)

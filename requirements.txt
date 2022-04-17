@@ -1,3 +1,2 @@
 easyocr
 PyMuPDF
-tqdm
