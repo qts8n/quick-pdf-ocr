@@ -5,6 +5,7 @@ import logging
 import multiprocessing
 import os.path as osp
 from time import perf_counter
+import re
 
 import easyocr
 import fitz
@@ -13,6 +14,7 @@ import docs
 import utils
 
 _OUT_DIR_PATH = 'outputs'
+_STRIP_REGEXP = r'(\n|\r| )+'
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -24,7 +26,10 @@ logger.addHandler(ch)
 def document_to_content(document, reader):
     content = []
     for page in document:
-        content.append(docs.page_to_content(page, reader))
+        page_content = re.sub(_STRIP_REGEXP, ' ', page.get_text()).strip()
+        if not page_content:
+            page_content = docs.page_to_content(page, reader)
+        content.append(page_content)
     return ' '.join(content)
 
 
